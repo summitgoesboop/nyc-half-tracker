@@ -17,29 +17,36 @@
 
     <script type="text/babel">
         function HalfMarathonTracker() {
-            const [completedWeeks, setCompletedWeeks] = React.useState(() => {
-                const saved = localStorage.getItem('nyc_half_completed_weeks');
+            // Track completed individual workouts using keys like "w1_tue", "w1_wed"
+            const [completedWorkouts, setCompletedWorkouts] = React.useState(() => {
+                const saved = localStorage.getItem('nyc_half_completed_workouts');
                 return saved ? JSON.parse(saved) : {};
             });
             const [activeTab, setActiveTab] = React.useState('tracker');
             const [filterPhase, setFilterPhase] = React.useState('all');
 
             React.useEffect(() => {
-                localStorage.setItem('nyc_half_completed_weeks', JSON.stringify(completedWeeks));
-            }, [completedWeeks]);
+                localStorage.setItem('nyc_half_completed_workouts', JSON.stringify(completedWorkouts));
+            }, [completedWorkouts]);
 
-            const toggleWeek = (weekNum) => {
-                setCompletedWeeks(prev => ({
+            const toggleWorkout = (weekNum, dayKey) => {
+                const itemKey = `w${weekNum}_${dayKey}`;
+                setCompletedWorkouts(prev => ({
                     ...prev,
-                    [weekNum]: !prev[weekNum]
+                    [itemKey]: !prev[itemKey]
                 }));
             };
 
-            const phases = [
-                { id: 1, name: "Phase 1: Foundation", weeks: [1, 2, 3, 4, 5, 6], desc: "Establish baseline & hip strength" },
-                { id: 2, name: "Phase 2: Aerobic Building", weeks: [7, 8, 9, 10, 11, 12, 13, 14], desc: "Progressive mileage & lateral stability" },
-                { id: 3, name: "Phase 3: Peak & Taper", weeks: [15, 16, 17, 18, 19, 20, 21], desc: "Peak distance & race taper" }
-            ];
+            const toggleWholeWeek = (weekNum, days) => {
+                const activeDays = days.filter(d => d.val.toLowerCase() !== 'rest');
+                const allActiveDone = activeDays.every(d => completedWorkouts[`w${weekNum}_${d.key}`]);
+
+                const updated = { ...completedWorkouts };
+                activeDays.forEach(d => {
+                    updated[`w${weekNum}_${d.key}`] = !allActiveDone;
+                });
+                setCompletedWorkouts(updated);
+            };
 
             const scheduleData = [
                 { w: 1, phase: 1, mon: "Rest", tue: "3 mi Easy + Glute", wed: "Strength A", thu: "3 mi Easy", fri: "Rest", sat: "4 mi Easy/Cross", sun: "Rest" },
@@ -65,8 +72,29 @@
                 { w: 21, phase: 3, type: "race", mon: "Rest", tue: "3 mi Easy", wed: "Mobility Only", thu: "2 mi Shakeout", fri: "Rest", sat: "Rest", sun: "RACE DAY (13.1 Mi)" }
             ];
 
-            const totalCompleted = Object.values(completedWeeks).filter(Boolean).length;
-            const progressPct = Math.round((totalCompleted / 21) * 100);
+            // Calculate total active workouts vs completed active workouts
+            let totalActiveWorkouts = 0;
+            let completedActiveWorkouts = 0;
+
+            scheduleData.forEach(item => {
+                const days = [
+                    { key: 'tue', val: item.tue },
+                    { key: 'wed', val: item.wed },
+                    { key: 'thu', val: item.thu },
+                    { key: 'sat', val: item.sat },
+                    { key: 'sun', val: item.sun }
+                ];
+                days.forEach(d => {
+                    if (d.val.toLowerCase() !== 'rest') {
+                        totalActiveWorkouts++;
+                        if (completedWorkouts[`w${item.w}_${d.key}`]) {
+                            completedActiveWorkouts++;
+                        }
+                    }
+                });
+            });
+
+            const progressPct = totalActiveWorkouts > 0 ? Math.round((completedActiveWorkouts / totalActiveWorkouts) * 100) : 0;
 
             const filteredWeeks = scheduleData.filter(item => {
                 if (filterPhase === 'all') return true;
@@ -83,8 +111,8 @@
                                 <p className="text-blue-200 text-sm mt-1">Low-impact volume management & ITBS glute activation protocol</p>
                             </div>
                             <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center min-w-[140px]">
-                                <div className="text-3xl font-ext500 font-bold">{progressPct}%</div>
-                                <div className="text-xs text-blue-200 uppercase tracking-wider font-medium mt-0.5">{totalCompleted} of 21 Weeks Done</div>
+                                <div className="text-3xl font-bold">{progressPct}%</div>
+                                <div className="text-xs text-blue-200 uppercase tracking-wider font-medium mt-0.5">{completedActiveWorkouts} of {totalActiveWorkouts} Workouts</div>
                             </div>
                         </div>
                         <div className="w-full bg-blue-900/50 rounded-full h-2.5 mt-5 overflow-hidden">
@@ -93,7 +121,7 @@
                     </div>
 
                     <div className="flex overflow-x-auto gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-slate-200 mb-6">
-                        <button onClick={() => setActiveTab('tracker')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'tracker' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>📅 Training Schedule</button>
+                        <button onClick={() => setActiveTab('tracker')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'tracker' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>📅 Daily Schedule</button>
                         <button onClick={() => setActiveTab('glute')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'glute' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🔥 Glute Activation</button>
                         <button onClick={() => setActiveTab('strength')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'strength' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🏋️ Strength Routines</button>
                         <button onClick={() => setActiveTab('rules')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'rules' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🛡️ ITBS Rules</button>
@@ -113,7 +141,19 @@
 
                             <div className="space-y-3">
                                 {filteredWeeks.map((item) => {
-                                    const isDone = !!completedWeeks[item.w];
+                                    const days = [
+                                        { label: 'Mon', key: 'mon', val: item.mon },
+                                        { label: 'Tue', key: 'tue', val: item.tue },
+                                        { label: 'Wed', key: 'wed', val: item.wed },
+                                        { label: 'Thu', key: 'thu', val: item.thu },
+                                        { label: 'Fri', key: 'fri', val: item.fri },
+                                        { label: 'Sat', key: 'sat', val: item.sat },
+                                        { label: 'Sun', key: 'sun', val: item.sun }
+                                    ];
+
+                                    const activeDays = days.filter(d => d.val.toLowerCase() !== 'rest');
+                                    const weekDone = activeDays.length > 0 && activeDays.every(d => completedWorkouts[`w${item.w}_${d.key}`]);
+
                                     let badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
                                     let badgeText = `Phase ${item.phase}`;
                                     if (item.type === 'deload') { badgeColor = "bg-amber-50 text-amber-700 border-amber-200"; badgeText = "Deload Week"; }
@@ -121,25 +161,49 @@
                                     if (item.type === 'race') { badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200"; badgeText = "RACE WEEK"; }
 
                                     return (
-                                        <div key={item.w} className={`bg-white rounded-xl border transition-all p-4 shadow-sm ${isDone ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-300'}`}>
-                                            <div className="flex items-center justify-between gap-4 mb-3">
-                                                <div className="flex items-center gap-3">
-                                                    <input type="checkbox" checked={isDone} onChange={() => toggleWeek(item.w)} className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" />
-                                                    <div>
-                                                        <span className="font-bold text-slate-800">Week {item.w}</span>
-                                                        <span className={`ml-2.5 text-xs px-2.5 py-0.5 rounded-full border font-medium ${badgeColor}`}>{badgeText}</span>
-                                                    </div>
+                                        <div key={item.w} className={`bg-white rounded-xl border transition-all p-4 shadow-sm ${weekDone ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-300'}`}>
+                                            <div className="flex items-center justify-between gap-4 mb-3 pb-2 border-b border-slate-100">
+                                                <div>
+                                                    <span className="font-bold text-slate-800">Week {item.w}</span>
+                                                    <span className={`ml-2.5 text-xs px-2.5 py-0.5 rounded-full border font-medium ${badgeColor}`}>{badgeText}</span>
                                                 </div>
-                                                <span className={`text-xs font-semibold ${isDone ? 'text-emerald-600' : 'text-slate-400'}`}>{isDone ? 'Completed ✓' : 'In Progress'}</span>
+                                                <button onClick={() => toggleWholeWeek(item.w, days)} className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                                    {weekDone ? 'Uncheck All' : 'Mark All Done'}
+                                                </button>
                                             </div>
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 text-xs">
-                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Mon</span><span className="font-medium text-slate-700">{item.mon}</span></div>
-                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Tue</span><span className="font-medium text-slate-700">{item.tue}</span></div>
-                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Wed</span><span className="font-medium text-slate-700">{item.wed}</span></div>
-                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Thu</span><span className="font-medium text-slate-700">{item.thu}</span></div>
-                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Fri</span><span className="font-medium text-slate-700">{item.fri}</span></div>
-                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Sat</span><span className="font-medium text-slate-700">{item.sat}</span></div>
-                                                <div className="bg-slate-50 p-2 rounded border border-slate-100 col-span-2 sm:col-span-1"><span className="block text-slate-400 font-medium">Sun</span><span className="font-medium text-slate-700">{item.sun}</span></div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-2">
+                                                {days.map(d => {
+                                                    const isRest = d.val.toLowerCase() === 'rest';
+                                                    const isChecked = !isRest && !!completedWorkouts[`w${item.w}_${d.key}`];
+
+                                                    return (
+                                                        <div 
+                                                            key={d.key} 
+                                                            onClick={() => !isRest && toggleWorkout(item.w, d.key)}
+                                                            className={`p-2.5 rounded-lg border text-xs transition-all flex flex-col justify-between ${
+                                                                isRest 
+                                                                    ? 'bg-slate-50 border-slate-100 opacity-60' 
+                                                                    : isChecked 
+                                                                        ? 'bg-emerald-50 border-emerald-300 cursor-pointer' 
+                                                                        : 'bg-white border-slate-200 hover:border-slate-300 cursor-pointer'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center justify-between mb-1">
+                                                                <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">{d.label}</span>
+                                                                {!isRest && (
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        checked={isChecked} 
+                                                                        onChange={() => toggleWorkout(item.w, d.key)}
+                                                                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                            <span className={`font-medium ${isChecked ? 'line-through text-slate-500' : 'text-slate-700'}`}>{d.val}</span>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     );
