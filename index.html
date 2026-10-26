@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC Half Marathon Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        function HalfMarathonTracker() {
+            const [completedWeeks, setCompletedWeeks] = React.useState(() => {
+                const saved = localStorage.getItem('nyc_half_completed_weeks');
+                return saved ? JSON.parse(saved) : {};
+            });
+            const [activeTab, setActiveTab] = React.useState('tracker');
+            const [filterPhase, setFilterPhase] = React.useState('all');
+
+            React.useEffect(() => {
+                localStorage.setItem('nyc_half_completed_weeks', JSON.stringify(completedWeeks));
+            }, [completedWeeks]);
+
+            const toggleWeek = (weekNum) => {
+                setCompletedWeeks(prev => ({
+                    ...prev,
+                    [weekNum]: !prev[weekNum]
+                }));
+            };
+
+            const phases = [
+                { id: 1, name: "Phase 1: Foundation", weeks: [1, 2, 3, 4, 5, 6], desc: "Establish baseline & hip strength" },
+                { id: 2, name: "Phase 2: Aerobic Building", weeks: [7, 8, 9, 10, 11, 12, 13, 14], desc: "Progressive mileage & lateral stability" },
+                { id: 3, name: "Phase 3: Peak & Taper", weeks: [15, 16, 17, 18, 19, 20, 21], desc: "Peak distance & race taper" }
+            ];
+
+            const scheduleData = [
+                { w: 1, phase: 1, mon: "Rest", tue: "3 mi Easy + Glute", wed: "Strength A", thu: "3 mi Easy", fri: "Rest", sat: "4 mi Easy/Cross", sun: "Rest" },
+                { w: 2, phase: 1, mon: "Rest", tue: "3 mi Easy + Glute", wed: "Strength B", thu: "3.5 mi Easy", fri: "Rest", sat: "4.5 mi Easy", sun: "Rest" },
+                { w: 3, phase: 1, mon: "Rest", tue: "3.5 mi Easy + Glute", wed: "Strength A", thu: "3.5 mi Easy", fri: "Rest", sat: "5 mi Easy", sun: "Rest" },
+                { w: 4, phase: 1, type: "deload", mon: "Rest", tue: "3 mi Easy", wed: "Strength B", thu: "3 mi Easy", fri: "Rest", sat: "4 mi Easy", sun: "Rest" },
+                { w: 5, phase: 1, mon: "Rest", tue: "4 mi Easy + Glute", wed: "Strength A", thu: "3.5 mi Easy", fri: "Rest", sat: "5.5 mi Easy", sun: "Rest" },
+                { w: 6, phase: 1, mon: "Rest", tue: "4 mi Easy + Glute", wed: "Strength B", thu: "4 mi Easy", fri: "Rest", sat: "6 mi Easy", sun: "Rest" },
+                { w: 7, phase: 2, mon: "Rest", tue: "4 mi + strides", wed: "Strength A", thu: "4 mi Easy", fri: "Rest", sat: "6.5 mi Long", sun: "Rest" },
+                { w: 8, phase: 2, mon: "Rest", tue: "4.5 mi Easy", wed: "Strength B", thu: "4 mi Tempo", fri: "Rest", sat: "7.5 mi Long", sun: "Rest" },
+                { w: 9, phase: 2, mon: "Rest", tue: "4.5 mi Easy", wed: "Strength A", thu: "4.5 mi Easy", fri: "Rest", sat: "8.5 mi Long", sun: "Rest" },
+                { w: 10, phase: 2, type: "deload", mon: "Rest", tue: "3.5 mi Easy", wed: "Strength B", thu: "3.5 mi Easy", fri: "Rest", sat: "6 mi Easy", sun: "Rest" },
+                { w: 11, phase: 2, mon: "Rest", tue: "5 mi Easy", wed: "Strength A", thu: "4.5 mi Easy", fri: "Rest", sat: "9.5 mi Long", sun: "Rest" },
+                { w: 12, phase: 2, mon: "Rest", tue: "5 mi Easy", wed: "Strength B", thu: "5 mi Race Pace", fri: "Rest", sat: "10.5 mi Long", sun: "Rest" },
+                { w: 13, phase: 2, mon: "Rest", tue: "5 mi Easy", wed: "Strength A", thu: "5 mi Easy", fri: "Rest", sat: "11.5 mi Long", sun: "Rest" },
+                { w: 14, phase: 2, type: "deload", mon: "Rest", tue: "4 mi Easy", wed: "Strength B", thu: "4 mi Easy", fri: "Rest", sat: "7 mi Easy", sun: "Rest" },
+                { w: 15, phase: 3, mon: "Rest", tue: "5 mi Easy", wed: "Strength A", thu: "5 mi Easy", fri: "Rest", sat: "12 mi Peak", sun: "Rest" },
+                { w: 16, phase: 3, mon: "Rest", tue: "5 mi Easy", wed: "Strength B", thu: "4 mi Race Pace", fri: "Rest", sat: "10 mi Long", sun: "Rest" },
+                { w: 17, phase: 3, type: "deload", mon: "Rest", tue: "4 mi Easy", wed: "Strength A", thu: "4 mi Easy", fri: "Rest", sat: "8 mi Long", sun: "Rest" },
+                { w: 18, phase: 3, mon: "Rest", tue: "4.5 mi Easy", wed: "Strength B", thu: "4 mi Easy", fri: "Rest", sat: "10 mi Long", sun: "Rest" },
+                { w: 19, phase: 3, type: "taper", mon: "Rest", tue: "4 mi Easy", wed: "Strength A (Light)", thu: "3.5 mi Easy", fri: "Rest", sat: "7 mi Long", sun: "Rest" },
+                { w: 20, phase: 3, type: "taper", mon: "Rest", tue: "3.5 mi Easy", wed: "Glute Mobility", thu: "3 mi Easy", fri: "Rest", sat: "4 mi Shakeout", sun: "Rest" },
+                { w: 21, phase: 3, type: "race", mon: "Rest", tue: "3 mi Easy", wed: "Mobility Only", thu: "2 mi Shakeout", fri: "Rest", sat: "Rest", sun: "RACE DAY (13.1 Mi)" }
+            ];
+
+            const totalCompleted = Object.values(completedWeeks).filter(Boolean).length;
+            const progressPct = Math.round((totalCompleted / 21) * 100);
+
+            const filteredWeeks = scheduleData.filter(item => {
+                if (filterPhase === 'all') return true;
+                return item.phase.toString() === filterPhase;
+            });
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 sm:p-6 font-sans">
+                    <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white rounded-2xl p-6 shadow-lg mb-6">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <span className="bg-blue-500/30 text-blue-100 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">March 21, 2027</span>
+                                <h1 className="text-2xl sm:text-3xl font-bold mt-2">United NYC Half Marathon Plan</h1>
+                                <p className="text-blue-200 text-sm mt-1">Low-impact volume management & ITBS glute activation protocol</p>
+                            </div>
+                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center min-w-[140px]">
+                                <div className="text-3xl font-ext500 font-bold">{progressPct}%</div>
+                                <div className="text-xs text-blue-200 uppercase tracking-wider font-medium mt-0.5">{totalCompleted} of 21 Weeks Done</div>
+                            </div>
+                        </div>
+                        <div className="w-full bg-blue-900/50 rounded-full h-2.5 mt-5 overflow-hidden">
+                            <div className="bg-emerald-400 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }}></div>
+                        </div>
+                    </div>
+
+                    <div className="flex overflow-x-auto gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-slate-200 mb-6">
+                        <button onClick={() => setActiveTab('tracker')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'tracker' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>📅 Training Schedule</button>
+                        <button onClick={() => setActiveTab('glute')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'glute' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🔥 Glute Activation</button>
+                        <button onClick={() => setActiveTab('strength')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'strength' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🏋️ Strength Routines</button>
+                        <button onClick={() => setActiveTab('rules')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'rules' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🛡️ ITBS Rules</button>
+                    </div>
+
+                    {activeTab === 'tracker' && (
+                        <div className="space-y-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                <span className="text-sm font-medium text-slate-700">Filter Phase:</span>
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick={() => setFilterPhase('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filterPhase === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>All Weeks</button>
+                                    <button onClick={() => setFilterPhase('1')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filterPhase === '1' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Phase 1 (W1-6)</button>
+                                    <button onClick={() => setFilterPhase('2')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filterPhase === '2' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Phase 2 (W7-14)</button>
+                                    <button onClick={() => setFilterPhase('3')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filterPhase === '3' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Phase 3 (W15-21)</button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {filteredWeeks.map((item) => {
+                                    const isDone = !!completedWeeks[item.w];
+                                    let badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+                                    let badgeText = `Phase ${item.phase}`;
+                                    if (item.type === 'deload') { badgeColor = "bg-amber-50 text-amber-700 border-amber-200"; badgeText = "Deload Week"; }
+                                    if (item.type === 'taper') { badgeColor = "bg-purple-50 text-purple-700 border-purple-200"; badgeText = "Taper Week"; }
+                                    if (item.type === 'race') { badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200"; badgeText = "RACE WEEK"; }
+
+                                    return (
+                                        <div key={item.w} className={`bg-white rounded-xl border transition-all p-4 shadow-sm ${isDone ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-300'}`}>
+                                            <div className="flex items-center justify-between gap-4 mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <input type="checkbox" checked={isDone} onChange={() => toggleWeek(item.w)} className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" />
+                                                    <div>
+                                                        <span className="font-bold text-slate-800">Week {item.w}</span>
+                                                        <span className={`ml-2.5 text-xs px-2.5 py-0.5 rounded-full border font-medium ${badgeColor}`}>{badgeText}</span>
+                                                    </div>
+                                                </div>
+                                                <span className={`text-xs font-semibold ${isDone ? 'text-emerald-600' : 'text-slate-400'}`}>{isDone ? 'Completed ✓' : 'In Progress'}</span>
+                                            </div>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 text-xs">
+                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Mon</span><span className="font-medium text-slate-700">{item.mon}</span></div>
+                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Tue</span><span className="font-medium text-slate-700">{item.tue}</span></div>
+                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Wed</span><span className="font-medium text-slate-700">{item.wed}</span></div>
+                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Thu</span><span className="font-medium text-slate-700">{item.thu}</span></div>
+                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Fri</span><span className="font-medium text-slate-700">{item.fri}</span></div>
+                                                <div className="bg-slate-50 p-2 rounded border border-slate-100"><span className="block text-slate-400 font-medium">Sat</span><span className="font-medium text-slate-700">{item.sat}</span></div>
+                                                <div className="bg-slate-50 p-2 rounded border border-slate-100 col-span-2 sm:col-span-1"><span className="block text-slate-400 font-medium">Sun</span><span className="font-medium text-slate-700">{item.sun}</span></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'glute' && (
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <h2 className="text-xl font-bold text-slate-800">5-Minute Pre-Run Glute Activation</h2>
+                            <p className="text-sm text-slate-600">Complete this sequence right before every single run to prevent IT Band syndrome by waking up your gluteus medius.</p>
+                            <div className="space-y-3 pt-2">
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">1. Lateral Band Walks</h3>
+                                    <p className="text-sm text-slate-600 mt-1">Mini-band around ankles/lower shins. 12 steps left, 12 steps right in a slight athletic squat. Keep toes pointed straight ahead.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">2. Standing Clamshells / Monster Walks</h3>
+                                    <p className="text-sm text-slate-600 mt-1">10 diagonal backward steps each leg with the mini-band positioned just above your knees.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">3. Single-Leg Glute Bridge</h3>
+                                    <p className="text-sm text-slate-600 mt-1">10 reps per side. Squeeze the working glute at the top firmly for a 2-second hold.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">4. Side-Lying Hip Abductions</h3>
+                                    <p className="text-sm text-slate-600 mt-1">10 reps per side. Keep leg straight, heel driven backward slightly (internal hip rotation isolates the glute med).</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'strength' && (
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                <h2 className="text-lg font-bold text-slate-800">Workout A (Gluteus Medius Focus)</h2>
+                                <ul className="space-y-3 text-sm text-slate-600">
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Side-Lying Hip Abductions:</strong> 3 sets × 12–15 reps per leg (weighted/banded).</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Single-Leg Romanian Deadlifts:</strong> 3 sets × 8–10 reps per leg.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Lateral Step-Ups:</strong> 3 sets × 10 reps per side on a 6-8 inch step.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Fire Hydrants + Donkey Kicks:</strong> 3 sets × 12 reps each per leg superset.</li>
+                                </ul>
+                            </div>
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                <h2 className="text-lg font-bold text-slate-800">Workout B (Glute Max & Core)</h2>
+                                <ul className="space-y-3 text-sm text-slate-600">
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Weighted Glute Bridges / Hip Thrusts:</strong> 3 sets × 10–12 reps.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Copenhagen Side Planks:</strong> 3 sets × 20–30 sec holds per side.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Paloff Press:</strong> 3 sets × 12 reps per side for anti-rotation.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Bulgarian Split Squats:</strong> 3 sets × 8 reps per leg.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'rules' && (
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <h2 className="text-xl font-bold text-slate-800">Key Rules for ITBS Prevention</h2>
+                            <div className="space-y-3 pt-2">
+                                <div className="p-4 rounded-lg bg-red-50/50 border border-red-100">
+                                    <h3 className="font-semibold text-red-900">❌ Never Foam Roll the IT Band Directly</h3>
+                                    <p className="text-sm text-slate-600 mt-1">The IT band is a thick band of fascia, not a muscle. Rolling it directly increases friction and inflammation. Instead, foam roll your Tensor Fasciae Latae (TFL) upper hip, quads, and glutes.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-emerald-50/50 border border-emerald-100">
+                                    <h3 className="font-semibold text-emerald-900">⚡ Cadence Check</h3>
+                                    <p className="text-sm text-slate-600 mt-1">Aim for a running cadence around 165–175 steps per minute. Shorter, faster strides reduce heavy force transmission through the lateral knee joint.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">⏱️ The 48-Hour Rule</h3>
+                                    <p className="text-sm text-slate-600 mt-1">If you feel lateral knee tightness or sharp discomfort mid-run, stop immediately. Swap running for swimming, cycling, or complete rest for 48 hours until symptom-free.</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<HalfMarathonTracker />, document.getElementById('root'));
+    </script>
+</body>
+</html>
