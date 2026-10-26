@@ -187,3 +187,208 @@
 
                             <div className="space-y-3">
                                 {filteredWeeks.map((item) => {
+                                    const days = [
+                                        { label: 'Mon', key: 'mon', val: item.mon },
+                                        { label: 'Tue', key: 'tue', val: item.tue },
+                                        { label: 'Wed', key: 'wed', val: item.wed },
+                                        { label: 'Thu', key: 'thu', val: item.thu },
+                                        { label: 'Fri', key: 'fri', val: item.fri },
+                                        { label: 'Sat', key: 'sat', val: item.sat },
+                                        { label: 'Sun', key: 'sun', val: item.sun }
+                                    ];
+
+                                    const activeDays = days.filter(d => d.val.toLowerCase() !== 'rest');
+                                    const weekDone = activeDays.length > 0 && activeDays.every(d => completedWorkouts[`w${item.w}_${d.key}`]);
+
+                                    let badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+                                    let badgeText = `Phase ${item.phase}`;
+                                    if (item.type === 'deload') { badgeColor = "bg-amber-50 text-amber-700 border-amber-200"; badgeText = "Deload Week"; }
+                                    if (item.type === 'taper') { badgeColor = "bg-purple-50 text-purple-700 border-purple-200"; badgeText = "Taper Week"; }
+                                    if (item.type === 'race') { badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200"; badgeText = "RACE WEEK"; }
+
+                                    return (
+                                        <div key={item.w} className={`bg-white rounded-xl border transition-all p-4 shadow-sm ${weekDone ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-300'}`}>
+                                            <div className="flex items-center justify-between gap-4 mb-3 pb-2 border-b border-slate-100">
+                                                <div>
+                                                    <span className="font-bold text-slate-800">Week {item.w}</span>
+                                                    <span className={`ml-2.5 text-xs px-2.5 py-0.5 rounded-full border font-medium ${badgeColor}`}>{badgeText}</span>
+                                                </div>
+                                                <button onClick={() => toggleWholeWeek(item.w, days)} className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                                    {weekDone ? 'Uncheck All' : 'Mark All Done'}
+                                                </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-2">
+                                                {days.map(d => {
+                                                    const isRest = d.val.toLowerCase() === 'rest';
+                                                    const isChecked = !isRest && !!completedWorkouts[`w${item.w}_${d.key}`];
+
+                                                    return (
+                                                        <div 
+                                                            key={d.key} 
+                                                            onClick={() => !isRest && toggleWorkout(item.w, d.key)}
+                                                            className={`p-2.5 rounded-lg border text-xs transition-all flex flex-col justify-between ${
+                                                                isRest 
+                                                                    ? 'bg-slate-50 border-slate-100 opacity-60' 
+                                                                    : isChecked 
+                                                                        ? 'bg-emerald-50 border-emerald-300 cursor-pointer' 
+                                                                        : 'bg-white border-slate-200 hover:border-slate-300 cursor-pointer'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center justify-between mb-1">
+                                                                <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">{d.label}</span>
+                                                                {!isRest && (
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        checked={isChecked} 
+                                                                        onChange={() => toggleWorkout(item.w, d.key)}
+                                                                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                            <span className={`font-medium ${isChecked ? 'line-through text-slate-500' : 'text-slate-700'}`}>{d.val}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'pullup' && (
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-800">23 Strict Pull-Up Pyramid Program</h2>
+                                    <p className="text-sm text-slate-600 mt-1">Perform 2 sessions per week (ideally on Strength days). Rest 60–90s between pyramid sets.</p>
+                                </div>
+                                <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-200 text-xs font-semibold text-center">
+                                    Goal: 23 Straight Reps by Week 19
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 pt-2">
+                                {pullupSchedule.map(p => {
+                                    const s1Done = !!completedPullups[`w${p.w}_s1`];
+                                    const s2Done = !!completedPullups[`w${p.w}_s2`];
+                                    const bothDone = s1Done && s2Done;
+
+                                    return (
+                                        <div key={p.w} className={`p-4 rounded-xl border transition-all ${bothDone ? 'bg-emerald-50 border-emerald-300' : 'bg-slate-50 border-slate-200'}`}>
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                <div>
+                                                    <span className="font-bold text-slate-800">Week {p.w}: {p.target}</span>
+                                                    <p className="text-xs text-slate-600 mt-0.5">{p.details}</p>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <button 
+                                                        onClick={() => togglePullupSession(p.w, 1)}
+                                                        className={`px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
+                                                            s1Done 
+                                                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
+                                                                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                                                        }`}
+                                                    >
+                                                        <input type="checkbox" checked={s1Done} readOnly className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 pointer-events-none" />
+                                                        <span>Session 1</span>
+                                                    </button>
+
+                                                    <button 
+                                                        onClick={() => togglePullupSession(p.w, 2)}
+                                                        className={`px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
+                                                            s2Done 
+                                                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
+                                                                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                                                        }`}
+                                                    >
+                                                        <input type="checkbox" checked={s2Done} readOnly className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 pointer-events-none" />
+                                                        <span>Session 2</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'glute' && (
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <h2 className="text-xl font-bold text-slate-800">5-Minute Pre-Run Glute Activation</h2>
+                            <p className="text-sm text-slate-600">Complete this sequence right before every single run to prevent IT Band syndrome by waking up your gluteus medius.</p>
+                            <div className="space-y-3 pt-2">
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">1. Lateral Band Walks</h3>
+                                    <p className="text-sm text-slate-600 mt-1">Mini-band around ankles/lower shins. 12 steps left, 12 steps right in a slight athletic squat. Keep toes pointed straight ahead.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">2. Standing Clamshells / Monster Walks</h3>
+                                    <p className="text-sm text-slate-600 mt-1">10 diagonal backward steps each leg with the mini-band positioned just above your knees.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">3. Single-Leg Glute Bridge</h3>
+                                    <p className="text-sm text-slate-600 mt-1">10 reps per side. Squeeze the working glute at the top firmly for a 2-second hold.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">4. Side-Lying Hip Abductions</h3>
+                                    <p className="text-sm text-slate-600 mt-1">10 reps per side. Keep leg straight, heel driven backward slightly (internal hip rotation isolates the glute med).</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'strength' && (
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                <h2 className="text-lg font-bold text-slate-800">Workout A (Gluteus Medius Focus)</h2>
+                                <ul className="space-y-3 text-sm text-slate-600">
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Side-Lying Hip Abductions:</strong> 3 sets × 12–15 reps per leg (weighted/banded).</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Single-Leg Romanian Deadlifts:</strong> 3 sets × 8–10 reps per leg.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Lateral Step-Ups:</strong> 3 sets × 10 reps per side on a 6-8 inch step.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Fire Hydrants + Donkey Kicks:</strong> 3 sets × 12 reps each per leg superset.</li>
+                                </ul>
+                            </div>
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                <h2 className="text-lg font-bold text-slate-800">Workout B (Glute Max & Core)</h2>
+                                <ul className="space-y-3 text-sm text-slate-600">
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Weighted Glute Bridges / Hip Thrusts:</strong> 3 sets × 10–12 reps.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Copenhagen Side Planks:</strong> 3 sets × 20–30 sec holds per side.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Paloff Press:</strong> 3 sets × 12 reps per side for anti-rotation.</li>
+                                    <li className="p-3 bg-slate-50 rounded-lg border border-slate-100"><strong className="text-slate-800">Bulgarian Split Squats:</strong> 3 sets × 8 reps per leg.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'rules' && (
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <h2 className="text-xl font-bold text-slate-800">Key Rules for ITBS Prevention</h2>
+                            <div className="space-y-3 pt-2">
+                                <div className="p-4 rounded-lg bg-red-50/50 border border-red-100">
+                                    <h3 className="font-semibold text-red-900">❌ Never Foam Roll the IT Band Directly</h3>
+                                    <p className="text-sm text-slate-600 mt-1">The IT band is a thick band of fascia, not a muscle. Rolling it directly increases friction and inflammation. Instead, foam roll your Tensor Fasciae Latae (TFL) upper hip, quads, and glutes.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-emerald-50/50 border border-emerald-100">
+                                    <h3 className="font-semibold text-emerald-900">⚡ Cadence Check</h3>
+                                    <p className="text-sm text-slate-600 mt-1">Aim for a running cadence around 165–175 steps per minute. Shorter, faster strides reduce heavy force transmission through the lateral knee joint.</p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <h3 className="font-semibold text-blue-900">⏱️ The 48-Hour Rule</h3>
+                                    <p className="text-sm text-slate-600 mt-1">If you feel lateral knee tightness or sharp discomfort mid-run, stop immediately. Swap running for swimming, cycling, or complete rest for 48 hours until symptom-free.</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<HalfMarathonTracker />, document.getElementById('root'));
+    </script>
+</body>
+</html>
