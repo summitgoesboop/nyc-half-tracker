@@ -17,9 +17,12 @@
 
     <script type="text/babel">
         function HalfMarathonTracker() {
-            // Track completed individual workouts using keys like "w1_tue", "w1_wed"
             const [completedWorkouts, setCompletedWorkouts] = React.useState(() => {
                 const saved = localStorage.getItem('nyc_half_completed_workouts');
+                return saved ? JSON.parse(saved) : {};
+            });
+            const [completedPullups, setCompletedPullups] = React.useState(() => {
+                const saved = localStorage.getItem('nyc_half_completed_pullups');
                 return saved ? JSON.parse(saved) : {};
             });
             const [activeTab, setActiveTab] = React.useState('tracker');
@@ -28,6 +31,10 @@
             React.useEffect(() => {
                 localStorage.setItem('nyc_half_completed_workouts', JSON.stringify(completedWorkouts));
             }, [completedWorkouts]);
+
+            React.useEffect(() => {
+                localStorage.setItem('nyc_half_completed_pullups', JSON.stringify(completedPullups));
+            }, [completedPullups]);
 
             const toggleWorkout = (weekNum, dayKey) => {
                 const itemKey = `w${weekNum}_${dayKey}`;
@@ -46,6 +53,13 @@
                     updated[`w${weekNum}_${d.key}`] = !allActiveDone;
                 });
                 setCompletedWorkouts(updated);
+            };
+
+            const togglePullupLevel = (weekNum) => {
+                setCompletedPullups(prev => ({
+                    ...prev,
+                    [weekNum]: !prev[weekNum]
+                }));
             };
 
             const scheduleData = [
@@ -72,7 +86,30 @@
                 { w: 21, phase: 3, type: "race", mon: "Rest", tue: "3 mi Easy", wed: "Mobility Only", thu: "2 mi Shakeout", fri: "Rest", sat: "Rest", sun: "RACE DAY (13.1 Mi)" }
             ];
 
-            // Calculate total active workouts vs completed active workouts
+            const pullupSchedule = [
+                { w: 1, target: "Pyramid peak: 5 reps", details: "1-2-3-2-1 (Rest 60s between sets)" },
+                { w: 2, target: "Pyramid peak: 6 reps", details: "1-2-3-4-3-2-1" },
+                { w: 3, target: "Pyramid peak: 7 reps", details: "1-2-3-4-5-4-3-2-1" },
+                { w: 4, target: "Deload (Peak: 5 reps)", details: "1-2-3-2-1 (Easy recovery week)" },
+                { w: 5, target: "Pyramid peak: 8 reps", details: "1-2-3-4-5-6-5-4-3-2-1" },
+                { w: 6, target: "Pyramid peak: 9 reps", details: "1-2-3-4-5-6-7-6-5-4-3-2-1" },
+                { w: 7, target: "Pyramid peak: 10 reps", details: "1-2-3-4-5-6-7-8-7-6-5-4-3-2-1" },
+                { w: 8, target: "Pyramid peak: 11 reps", details: "Add sets targeting peak of 11 strict reps" },
+                { w: 9, target: "Pyramid peak: 12 reps", details: "Peak set reaches 12 strict reps" },
+                { w: 10, target: "Deload (Peak: 8 reps)", details: "Deload pyramid volume" },
+                { w: 11, target: "Pyramid peak: 13 reps", details: "Peak set reaches 13 strict reps" },
+                { w: 12, target: "Pyramid peak: 14 reps", details: "Peak set reaches 14 strict reps" },
+                { w: 13, target: "Pyramid peak: 15 reps", details: "Peak set reaches 15 strict reps" },
+                { w: 14, target: "Deload (Peak: 10 reps)", details: "Deload pyramid volume" },
+                { w: 15, target: "Pyramid peak: 17 reps", details: "Scaling up peak towards target goal" },
+                { w: 16, target: "Pyramid peak: 19 reps", details: "Heavy endurance phase" },
+                { w: 17, target: "Deload (Peak: 12 reps)", details: "Recovery week" },
+                { w: 18, target: "Pyramid peak: 21 reps", details: "Final heavy strength block" },
+                { w: 19, target: "Taper Peak: 23 reps", details: "Attempt max strict set / peak pyramid" },
+                { w: 20, target: "Taper Maintenance", details: "Light ladder sets (max 10 reps)" },
+                { w: 21, target: "Race Week Freshness", details: "Rest / light bar hangs only" }
+            ];
+
             let totalActiveWorkouts = 0;
             let completedActiveWorkouts = 0;
 
@@ -108,7 +145,7 @@
                             <div>
                                 <span className="bg-blue-500/30 text-blue-100 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">March 21, 2027</span>
                                 <h1 className="text-2xl sm:text-3xl font-bold mt-2">United NYC Half Marathon Plan</h1>
-                                <p className="text-blue-200 text-sm mt-1">Low-impact volume management & ITBS glute activation protocol</p>
+                                <p className="text-blue-200 text-sm mt-1">Low-impact volume management, ITBS glute activation & 23 Strict Pull-Up Goal</p>
                             </div>
                             <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center min-w-[140px]">
                                 <div className="text-3xl font-bold">{progressPct}%</div>
@@ -122,6 +159,7 @@
 
                     <div className="flex overflow-x-auto gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-slate-200 mb-6">
                         <button onClick={() => setActiveTab('tracker')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'tracker' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>📅 Daily Schedule</button>
+                        <button onClick={() => setActiveTab('pullup')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'pullup' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🧗 Pull-Up Pyramid</button>
                         <button onClick={() => setActiveTab('glute')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'glute' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🔥 Glute Activation</button>
                         <button onClick={() => setActiveTab('strength')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'strength' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🏋️ Strength Routines</button>
                         <button onClick={() => setActiveTab('rules')} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'rules' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>🛡️ ITBS Rules</button>
@@ -205,6 +243,37 @@
                                                     );
                                                 })}
                                             </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'pullup' && (
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-800">23 Strict Pull-Up Pyramid Program</h2>
+                                    <p className="text-sm text-slate-600 mt-1">Perform 2 sessions per week (ideally paired with your Strength days). Rest 60–90 seconds between sets.</p>
+                                </div>
+                                <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-200 text-xs font-semibold text-center">
+                                    Goal: 23 Straight Reps by Week 19
+                                </div>
+                            </div>
+                            <div className="space-y-3 pt-2">
+                                {pullupSchedule.map(p => {
+                                    const isDone = !!completedPullups[p.w];
+                                    return (
+                                        <div key={p.w} onClick={() => togglepullupLevel(p.w)} className={`p-4 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${isDone ? 'bg-emerald-50 border-emerald-300' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <input type="checkbox" checked={isDone} onChange={() => togglepullupLevel(p.w)} className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" />
+                                                <div>
+                                                    <span className="font-bold text-slate-800">Week {p.w}: {p.target}</span>
+                                                    <p className="text-xs text-slate-600 mt-0.5">{p.details}</p>
+                                                </div>
+                                            </div>
+                                            <span className={`text-xs font-semibold ${isDone ? 'text-emerald-600' : 'text-slate-400'}`}>{isDone ? 'Completed ✓' : 'Pending'}</span>
                                         </div>
                                     );
                                 })}
